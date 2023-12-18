@@ -23,3 +23,25 @@ FROM customer_contracts as cc inner join products as p
 on cc.product_id = p.product_id
 group by cc.customer_id
 having count(distinct p.product_category) = 3
+--5
+select mng.employee_id, mng.name, 
+    count(emp.reports_to) as reports_count, 
+    round(avg(emp.age),0) as average_age
+from Employees as emp left JOIN Employees as mng
+on emp.reports_to = mng.employee_id
+where mng.employee_id IS NOT NULL 
+group by mng.employee_id, mng.name
+--6
+select b.product_name, sum(a.unit) as unit
+
+from Orders as a left join Products as b
+on a.product_id = b.product_id
+where extract(month from a.order_date)= 2
+group by b.product_name
+having sum(a.unit)>=100
+--7
+SELECT p.page_id
+FROM pages as p left join page_likes as l   
+on p.page_id = l.page_id
+WHERE liked_date IS NULL
+order by p.page_id
