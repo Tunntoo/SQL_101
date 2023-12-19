@@ -45,3 +45,74 @@ FROM pages as p left join page_likes as l
 on p.page_id = l.page_id
 WHERE liked_date IS NULL
 order by p.page_id
+
+-------------------MID-COURSE TEST ---------------------
+--1
+select distinct replacement_cost from film
+order by replacement_cost
+--2
+select count(film_id),
+CASE 
+	when replacement_cost between 9.99 and 19.99 then 'low'
+	when replacement_cost between 20.00 and 24.99 then 'medium'
+	else 'high'
+END as category
+from film
+group by category
+--3
+select f.title, f.length, ca.name 
+from category as ca 
+INNER JOIN film_category as fca
+on ca.category_id = fca.category_id
+INNER JOIN film as f
+on f.film_id = fca.film_id
+where ca.name IN ('Drama', 'Sports')
+order by f.length desc
+--4
+select count(f.title), ca.name
+from category as ca 
+INNER JOIN film_category as fca
+on ca.category_id = fca.category_id
+INNER JOIN film as f
+on f.film_id = fca.film_id
+group by ca.name
+order by count(f.title) DESC
+--5 
+select ac.first_name, ac.last_name, count(f.film_id)
+from film_actor as fac
+INNER JOIN film as f 
+on fac.film_id = f.film_id
+INNER JOIN actor as ac
+on fac.actor_id = ac.actor_id
+group by ac.first_name, ac.last_name
+order by count(f.film_id) desc
+--6
+select ad.address, ad.address_id, c.address_id
+from address as ad 
+LEFT JOIN customer as c
+ON ad.address_id = c.address_id
+where c.address_id is null
+--7
+select city.city, sum(payment.amount)
+from city 
+inner join address
+on city.city_id = address.city_id
+inner join customer
+on customer.address_id = address.address_id
+inner join payment
+on customer.customer_id = payment.customer_id
+group by city.city
+order by sum(payment.amount) desc
+--8
+select city.city||', '||country.country, sum(payment.amount)
+from city 
+inner join address
+on city.city_id = address.city_id
+inner join customer
+on customer.address_id = address.address_id
+inner join payment
+on customer.customer_id = payment.customer_id
+inner join country
+on city.country_id = country.country_id
+group by city.city||', '||country.country
+order by sum(payment.amount) desc
