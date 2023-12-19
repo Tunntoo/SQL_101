@@ -104,6 +104,7 @@ on customer.customer_id = payment.customer_id
 group by city.city
 order by sum(payment.amount) desc
 --8
+/*để bài là thành phố của đất nước nào đạt doanh thu cao nhất nên mình để order by desc*/ 
 select city.city||', '||country.country, sum(payment.amount)
 from city 
 inner join address
