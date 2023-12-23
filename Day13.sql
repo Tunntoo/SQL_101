@@ -107,4 +107,27 @@ sales.price
 from cte left join sales on cte.product_id = sales.product_id and cte.first_year=sales.year
 
 --8
+select customer_id
+from customer
+group by customer_id
+having count(distinct product_key) = (select count(distinct product_key) from product)
+
+--9
+select employee_id 
+from employees
+where manager_id not in (select employee_id from Employees) and salary < 30000
+order by employee_id
+
+--10
+with cte as (
+  select
+  company_id, title, description,
+  count(job_id) as count
+  from job_listings
+  group by company_id, title, description)
+
+select count(distinct company_id) 
+from cte where count > 1
+
+--11
 
