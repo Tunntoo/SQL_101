@@ -130,4 +130,37 @@ select count(distinct company_id)
 from cte where count > 1
 
 --11
+with a as(
+SELECT Users.user_id, Users.name AS results, count(MR.rating)
+FROM MovieRating AS MR
+JOIN Users ON MR.user_id = Users.user_id
+GROUP BY user_id 
+ORDER BY count(rating) DESC, users.name ASC
+LIMIT 1
+),
+
+b as (
+select MR.movie_id, avg(MR.rating), Movies.title as results
+from MovieRating as MR
+JOIN Movies ON MR.movie_id = Movies.movie_id
+where EXTRACT(YEAR_MONTH from created_at)= 202002
+group by movie_id
+order by avg(rating) desc, Movies.title asc
+LIMIT 1
+)
+
+select a.results from a 
+UNION ALL
+select b.results from b 
+
+--12
+with cte as (select requester_id from RequestAccepted
+UNION ALL
+select accepter_id from RequestAccepted)
+
+select requester_id as id, count(requester_id) as num
+from cte
+group by requester_id
+order by count(requester_id) desc
+limit 1
 
