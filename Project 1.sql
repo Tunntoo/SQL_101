@@ -8,6 +8,22 @@ RENAME COLUMN ordernumber TO order_number;
 ALTER TABLE sales_dataset_rfm_prj                                       
 ALTER COLUMN order_number TYPE integer USING (order_number::integer); 
 
+ALTER TABLE sales_dataset_rfm_prj                                       
+ALTER COLUMN quantity_ordered TYPE integer USING (quantity_ordered::integer);
+
+ALTER TABLE sales_dataset_rfm_prj                                       
+ALTER COLUMN price_each TYPE numeric USING (price_each::numeric);
+
+ALTER TABLE sales_dataset_rfm_prj                                       
+ALTER COLUMN order_line_number TYPE integer USING (order_line_number::integer);
+
+ALTER TABLE sales_dataset_rfm_prj                                       
+ALTER COLUMN sales TYPE numeric USING (sales::numeric);
+
+ALTER TABLE sales_dataset_rfm_prj                                       
+ALTER COLUMN msrp TYPE integer USING (msrp::integer);
+
+
 ---changing column type to timestamp
 UPDATE sales_dataset_rfm_prj SET order_date = (TO_DATE(order_date, 'MM/DD/YYYY'));                          
 
