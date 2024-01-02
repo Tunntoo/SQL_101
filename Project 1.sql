@@ -65,13 +65,7 @@ UPPER(LEFT(contact_first_name,1))||RIGHT(contact_first_name,LENGTH(contact_first
 ALTER TABLE sales_dataset_rfm_prj
 ADD COLUMN QTR_ID INT
 UPDATE sales_dataset_rfm_prj
-SET QTR_ID = (
-   CASE 
-	WHEN EXTRACT(MONTH FROM order_date) in (1,2,3) THEN 1
-	WHEN EXTRACT(MONTH FROM order_date) in (4,5,6) THEN 2
-	WHEN EXTRACT(MONTH FROM order_date) in (7,8,9) THEN 3
-	ELSE 4
-END )
+SET QTR_ID = EXTRACT(QUARTER from order_date)
 
 ALTER TABLE sales_dataset_rfm_prj
 ADD COLUMN MONTH_ID INT
