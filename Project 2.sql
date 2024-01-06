@@ -1,23 +1,15 @@
 --- tìm số lượng đơn hàng và số lượng khách hàng theo mỗi tháng từ 01/2019 tới 04/2022
-with total_order_user_extract as (SELECT 
-extract(year from created_at) as year,
-extract(month from created_at) as month,
-count(distinct user_id) as total_user,
-count(order_id) as total_order
-FROM (
-  SELECT *
-  FROM bigquery-public-data.thelook_ecommerce.orders
-  WHERE created_at BETWEEN '2019-01-01' AND '2022-05-01') as a
-WHERE status = 'Complete'
-group by extract(year from created_at), extract(month from created_at))
-
-select 
-year||'-'||month as month_year, 
-total_user,
-total_order 
-from total_order_user_extract
-order by year, month
-Nhận xét: từ khoảng 01/2019 tới 04/2022, số lượng khách hàng và đơn hàng tăng theo thời gian. 
+select year||"-"||month as month_year, total_user, total_order 
+from (
+      select count(order_id) as total_order, 
+      count(distinct user_id) as total_user, extract(year from created_at) as year, extract(month from created_at) as month 
+      from 
+      bigquery-public-data.thelook_ecommerce.orders
+      where created_at BETWEEN '2019-01-02' AND '2022-05-01' AND status = 'Complete'
+      group by 3, 4
+      order by 3, 4) Table 
+    Nhận xét: từ khoảng 01/2019 tới 04/2022, số lượng khách hàng và đơn hàng tăng theo thời gian và tăng khá đồng đều
+  
 
 --- giá trị đơn hàng trung bình (AOV) theo tháng
 with b as (SELECT *
