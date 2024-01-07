@@ -8,7 +8,8 @@ from (
       where created_at BETWEEN '2019-01-02' AND '2022-05-01' AND status = 'Complete'
       group by 3, 4
       order by 3, 4) Table 
-    Nhận xét: từ khoảng 01/2019 tới 04/2022, số lượng khách hàng và đơn hàng tăng theo thời gian và tăng khá đồng đều
+
+Nhận xét: từ khoảng 01/2019 tới 04/2022, số lượng khách hàng và đơn hàng tăng theo thời gian và tăng khá đồng đều
   
 
 --- giá trị đơn hàng trung bình (AOV) theo tháng
