@@ -12,71 +12,67 @@ from (
   
 
 --- giá trị đơn hàng trung bình (AOV) theo tháng
-with b as (SELECT *
-  FROM bigquery-public-data.thelook_ecommerce.orders
-  WHERE created_at BETWEEN '2019-01-01' AND '2022-05-01' and status = 'Complete')
-
-, so_luong as (select extract(year from b.created_at) as year, extract(month from b.created_at) as month,
-cast(sum(sale_price) as numeric) as total_amount,
-count(distinct a.user_id) as distinct_user,
-count(b.order_id)  as so_luong_don_hang
-from b
-left join bigquery-public-data.thelook_ecommerce.order_items as a
-on b.order_id = a.order_id
-group by extract(year from b.created_at), extract(month from b.created_at))
-
-select year||'-'||month as year_month, 
-distinct_user,
-round(total_amount / so_luong_don_hang,2) as AOV
-from so_luong
-Nhận xét: từ khoảng 01/2019 tới 04/2022, số lượng khách hàng distinct tăng theo thời gian, giá trị đơn hàng giao động ở mức $50-70/order.
+select year||'-'||month as month_year, distinct_users, average_order_value
+from(
+    select count(distinct o.user_id) as distinct_users,avg(oi.sale_price)as average_order_value, 
+    extract(year from o.created_at) as year, extract(month from o.created_at) as month from 
+    bigquery-public-data.thelook_ecommerce.orders as o
+    left join bigquery-public-data.thelook_ecommerce.order_items as oi
+    on o.order_id = oi.order_id
+    where o.created_at BETWEEN '2019-01-02' AND '2022-05-01' AND o.status = 'Complete'
+    group by 3,4
+    order by 3,4)
+Nhận xét: từ khoảng 01/2019 tới 04/2022, số lượng khách hàng distinct tăng theo thời gian, giá trị đơn hàng đạt mức cao nhất vào tháng 3/2019 nhưng sau đó giữ ở mức ~$50-70 trong những tháng tiếp theo.
 
 --- Nhóm khách hàng theo độ tuổi
-with customer as (Select 
-first_name, last_name, gender, age,
-case when age = (select min(age) from bigquery-public-data.thelook_ecommerce.users ) then 'youngest'
-when age = (select max(age) from bigquery-public-data.thelook_ecommerce.users ) then 'oldest'
-end as tag
-from bigquery-public-data.thelook_ecommerce.users
-where created_at between '2019-01-01' and '2022-05-01')
-
-,youngest_oldest as (select first_name, last_name, age, gender, tag
-from customer
-where tag = 'youngest' or tag ='oldest'
+with age as (select first_name, last_name, gender, age, tag
+from (
+    select first_name, last_name, o.gender as gender, age,
+      case 
+        when age = (select min(age) from bigquery-public-data.thelook_ecommerce.users) then 'youngest'
+        when age = (select max (age) from bigquery-public-data.thelook_ecommerce.users) then 'oldest'
+      end as tag
+    from 
+    bigquery-public-data.thelook_ecommerce.orders as o
+    left join bigquery-public-data.thelook_ecommerce.users as u
+    on o.user_id = u.id
+    where o.created_at BETWEEN '2019-01-02' AND '2022-05-01' AND o.status = 'Complete'
+) table
+where tag is not null
 order by gender, age)
 
-, age_insight as (select 
-tag, gender, count(*)
-from youngest_oldest
-group by tag,gender
-order by gender)
+select gender, tag, count(*) as so_luong from age
+group by gender, tag
 
 Nhận xét: 
 -Tuổi nhỏ nhất: 12, tuổi lớn nhất: 70
--Số kh nữ nhỏ tuổi nhất: 543, số kh nam nhỏ tuổi nhất: 553, số kh nữ lớn tuổi nhất: 568, số kh nam lớn tuổi nhất: 542
+------------------------------------------
+|  gender    |    tag        |  so_luong |
+------------------------------------------
+|  F         |    oldest     |  69       |
+------------------------------------------
+|  F         |    youngest   |  95       |
+------------------------------------------
+|  M         |    youngest   |  63       |
+------------------------------------------
+|  M         |    oldest     |  76       |
+------------------------------------------
 
---- top 5 sản phẩm có lợi nhuận cao nhất theo từng tháng 
-with b as (SELECT extract(month from created_at) as month, extract(year from created_at) as year, order_id
-  FROM bigquery-public-data.thelook_ecommerce.orders 
-  WHERE created_at BETWEEN '2019-01-01' AND '2022-05-01' and status = 'Complete')
+      --- top 5 sản phẩm có lợi nhuận cao nhất theo từng tháng 
+with ranking_product_profit as (select year||'-'||month as month_year, product_id, product_name, sales, cost, profit,
+dense_rank () over(partition by year, month order by profit) as rank
+from (
+select product_id, product_name, sum(product_retail_price) as sales, sum(cost)as cost, sum(product_retail_price)-sum(cost) as profit
+,extract (year from sold_at) as year, extract (month from sold_at) as month
+from 
+bigquery-public-data.thelook_ecommerce.inventory_items
+where sold_at is not null 
+group by year, month, product_id, product_name) Table
+)
 
-, c as (select b.month,b.year, p.id, p.name, sum(p.retail_price) as sales, sum(p.cost) as cost, sum(p.retail_price - p.cost) as profit
-from b 
-left join bigquery-public-data.thelook_ecommerce.order_items as oi on b.order_id = oi.order_id
-left join bigquery-public-data.thelook_ecommerce.products as p on oi.product_id = p.id
-group by  b.month,b.year, p.id, p.name )
-
-
-
-, rank as (select month, year, id, name, sales, cost, profit, 
-dense_rank()over(partition by year, month order by profit desc)as stt
-from c)
-
-select year||'-'||month as month_year,
-id, name, sales, cost, profit, stt
-from rank 
-where stt <=5
-order by year, month
+select month_year, product_id, product_name, sales, cost, profit, rank
+from ranking_product_profit
+where rank <= 5
 
 --- doanh thu theo ngày của từng danh mục sản phẩm trong 3 tháng qua (ngày hiện tại là 15/04/2022)
 SELECT  date(oi.created_at)as date,p.category as product_categories, 
