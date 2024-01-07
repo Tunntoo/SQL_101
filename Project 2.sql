@@ -1,3 +1,17 @@
+/*check null
+select * from bigquery-public-data.thelook_ecommerce.orders
+where order_id is null or
+user_id is null or
+status is null or
+created_at is null
+
+select * from bigquery-public-data.thelook_ecommerce.order_items
+where order_id is null or
+user_id is null or
+status is null or
+product_id is null
+*/
+
 --- tìm số lượng đơn hàng và số lượng khách hàng theo mỗi tháng từ 01/2019 tới 04/2022
 select year||"-"||month as month_year, total_user, total_order 
 from (
@@ -76,6 +90,14 @@ from ranking_product_profit
 where rank <= 5
 
 --- doanh thu theo ngày của từng danh mục sản phẩm trong 3 tháng qua (ngày hiện tại là 15/04/2022)
+
+/* check null:
+select * from bigquery-public-data.thelook_ecommerce.inventory_items
+where 
+product_id is null 
+or product_retail_price is null
+or cost is null */
+
 SELECT  date(oi.created_at)as date,p.category as product_categories, 
 sum(p.retail_price)-sum(p.cost) as revenue
 
