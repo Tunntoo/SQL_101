@@ -1,4 +1,4 @@
---- create dataset
+--- create dataset theo yêu cầu
 with main as (select
 year||'-'||month as month,
 year,
@@ -34,3 +34,41 @@ Total_cost,
 Total_profit,
 Total_profit/Total_cost as Profit_to_cost_ratio
 from main
+
+---cohort analysis
+with index as (select 
+user_id,
+extract(year from created_at)||'-'||extract(month from created_at) as cohort_date,
+created_at,
+12*(extract(year from created_at) - extract(year from first_purchase_date))+
+(extract(month from created_at) - extract(month from first_purchase_date)) + 1 as indexx
+from(
+select user_id,
+min(created_at) over(partition by user_id) as first_purchase_date,
+created_at
+from bigquery-public-data.thelook_ecommerce.order_items
+where created_at BETWEEN '2019-01-01' AND '2022-05-01' and status = 'Complete'))
+
+, cohort as (select 
+cohort_date,
+indexx,
+count(distinct user_id) as cnt
+from index
+group by cohort_date,indexx)
+
+,customer_cohort as (select 
+cohort_date, 
+sum(case when indexx=1 then cnt else 0 end) as m1,
+sum(case when indexx=2 then cnt else 0 end) as m2,
+sum(case when indexx=3 then cnt else 0 end) as m3,
+sum(case when indexx=4 then cnt else 0 end) as m4
+from cohort
+group by cohort_date)
+
+---retention cohort
+select cohort_date,
+round(m1/m1*100.00,2)||'%' as m1,
+round(m2/m1*100.00,2)||'%' as m2,
+round(m3/m1*100.00,2)||'%' as m3,
+round(m4/m1*100.00,2)||'%' as m4,
+from customer_cohort
