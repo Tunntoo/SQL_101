@@ -36,17 +36,18 @@ Total_profit/Total_cost as Profit_to_cost_ratio
 from main
 
 ---cohort analysis
-with index as (select 
-user_id,
-format_date('%Y-%m',first_purchase_date) as cohort_date,
-created_at,
-12*(extract(year from created_at) - extract(year from first_purchase_date))+
-(extract(month from created_at) - extract(month from first_purchase_date)) + 1 as indexx
-from(
-select user_id,
-min(created_at) over(partition by user_id) as first_purchase_date,
-created_at
-from bigquery-public-data.thelook_ecommerce.order_items))
+with index as (
+      select 
+      user_id,
+      format_date('%Y-%m',first_purchase_date) as cohort_date,
+      created_at,
+      12*(extract(year from created_at) - extract(year from first_purchase_date))+
+      (extract(month from created_at) - extract(month from first_purchase_date)) + 1 
+      as indexx
+from ( select user_id,
+       MIN(created_at) over(partition by user_id) as first_purchase_date,
+       created_at
+       from bigquery-public-data.thelook_ecommerce.order_items))
 
 , cohort as (select 
 cohort_date,
@@ -63,16 +64,6 @@ sum(case when indexx=3 then cnt else 0 end) as m3,
 sum(case when indexx=4 then cnt else 0 end) as m4
 from cohort
 group by cohort_date)
-
----retention cohort
-select cohort_date,
-round(m1/m1*100.00,2)||'%' as m1,
-round(m2/m1*100.00,2)||'%' as m2,
-round(m3/m1*100.00,2)||'%' as m3,
-round(m4/m1*100.00,2)||'%' as m4,
-from customer_cohort
-
-
 
 ---retention cohort
 select cohort_date,
