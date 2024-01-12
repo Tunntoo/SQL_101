@@ -1,4 +1,4 @@
---- create dataset theo yêu cầu
+
 with main as (select
 year||'-'||month as month,
 year,
@@ -72,3 +72,6 @@ round(m2/m1*100.00,2)||'%' as m2,
 round(m3/m1*100.00,2)||'%' as m3,
 round(m4/m1*100.00,2)||'%' as m4,
 from customer_cohort
+
+---- đánh giá tổng quan: lượng khách hàng mới có xu hướng gia tăng tuy nhiên khả năng giữ chân khách hàng còn chưa hiệu quả. Một số tháng có lượng retention là 0%. 
+---- Ý tưởng đề xuất: cần phát triển stategy để convert khách hàng mới thành khách hàng trung thành. 
