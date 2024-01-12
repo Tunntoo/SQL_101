@@ -1,4 +1,4 @@
-select * from public.sales_dataset_rfm_prj; 
+SELECT * FROM public.sales_dataset_rfm_prj; 
 
 ---Changing column name format
 ALTER TABLE sales_dataset_rfm_prj            
@@ -41,7 +41,7 @@ WHERE
 	order_date IS NULL ; 
 
 ---adding column contact_last_name & contact_first_name with values extracted from contact_full_name 
- ALTER TABLE public.sales_dataset_rfm_prj
+ALTER TABLE public.sales_dataset_rfm_prj
 ADD COLUMN contact_last_name VARCHAR
 
 ALTER TABLE public.sales_dataset_rfm_prj
@@ -65,7 +65,7 @@ UPPER(LEFT(contact_first_name,1))||RIGHT(contact_first_name,LENGTH(contact_first
 ALTER TABLE sales_dataset_rfm_prj
 ADD COLUMN QTR_ID INT
 UPDATE sales_dataset_rfm_prj
-SET QTR_ID = EXTRACT(QUARTER from order_date)
+SET QTR_ID = EXTRACT(QUARTER FROM order_date)
 
 ALTER TABLE sales_dataset_rfm_prj
 ADD COLUMN MONTH_ID INT
@@ -84,34 +84,34 @@ PERCENTILE_CONT(0.75) WITHIN GROUP (ORDER BY quantity_ordered) AS Q3,
 PERCENTILE_CONT(0.75) WITHIN GROUP (ORDER BY quantity_ordered) - PERCENTILE_CONT(0.25) WITHIN GROUP (ORDER BY quantity_ordered) AS IQR
 FROM public.sales_dataset_rfm_prj), 
 
-cte1 as (select 
-Q1 - 1.5*IQR as min,
-Q3 + 1.5*IQR as max
-from cte),
+cte1 as (SELECT 
+	Q1 - 1.5*IQR AS min,
+	Q3 + 1.5*IQR AS max
+	FROM cte),
 
 outlier_percentile as (SELECT quantity_ordered 
-from public.sales_dataset_rfm_prj
-where quantity_ordered < (SELECT min from cte1)
-or quantity_ordered > (SELECT max from cte1))
+			FROM public.sales_dataset_rfm_prj
+			WHERE quantity_ordered < (SELECT min FROM cte1)	
+			OR quantity_ordered > (SELECT max FROM cte1))
    
 ---find outliers using Z-score
 
 with cte as (
-	select order_number, quantity_ordered, 
-	(select avg(quantity_ordered)
-	from public.sales_dataset_rfm_prj) as average,
-	(select 
-	stddev(quantity_ordered)
-	from public.sales_dataset_rfm_prj) as standard_dev
-	from sales_dataset_rfm_prj),
+	SELECT order_number, quantity_ordered, 
+		(SELECT avg(quantity_ordered)
+		FROM public.sales_dataset_rfm_prj) AS average,
+		(SELECT stddev(quantity_ordered)
+		FROM public.sales_dataset_rfm_prj) AS standard_dev
+	FROM sales_dataset_rfm_prj),
 	
-outlier_Z_score as (select quantity_ordered, (quantity_ordered-average)/standard_dev as Z_score
-from cte
-where abs((quantity_ordered-average)/standard_dev) >3)
+outlier_Z_score as (
+	SELECT quantity_ordered, (quantity_ordered-average)/standard_dev AS Z_score
+	FROM cte
+	WHERE ABS((quantity_ordered-average)/standard_dev) >3)
 
 ---clean the outliers by update the database
 UPDATE public.sales_dataset_rfm_prj
-SET quantity_ordered = (select avg(quantity_ordered) from public.sales_dataset_rfm_prj)
+SET quantity_ordered = (SELECT avg(quantity_ordered) FROM public.sales_dataset_rfm_prj)
 WHERE quantity_ordered IN (SELECT quantity_ordered FROM outlier_percentile)
    
 ---clean the outliers by delete it from the database
